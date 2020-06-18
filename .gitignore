@@ -4,17 +4,19 @@
 .idea/
 input/*
 output/*
+pretrain/classifier/*
 
 # Expressions
 *dummy.py
 
 # Files
-###
+
 
 # !!! Exception !!!
 !input/demo/
 !input/pretrain/
 !output/demo/
+!pretrain/classifier/classifier.*
 
 # ----------------------------------------
 
