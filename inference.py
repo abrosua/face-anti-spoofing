@@ -1,7 +1,8 @@
 import os
+import sys
 import time
 import argparse
-from typing import Optional, List, Tuple
+from typing import Union, List, Tuple
 
 import cv2
 import numpy as np
@@ -10,18 +11,20 @@ from imutils.video import VideoStream
 from tensorflow.keras.preprocessing.image import img_to_array
 from tensorflow.keras.models import load_model
 
+from model import generate_model
+
 
 # construct the argument parser and parse the arguments
 ap = argparse.ArgumentParser()
-ap.add_argument("-m", "--model", type=str, required=True,
-	help="path to classifier model")
+ap.add_argument("-m", "--classifier", type=str, required=True,
+	help="path to the classifier model")
 ap.add_argument("-d", "--detector", type=str, required=True,
 	help="path to OpenCV's deep learning face detector")
 ap.add_argument("-p", "--path", type=str, required=True, default=0,
 	help="path to the input file(s), can be image, video or a camera ID.")
-ap.add_argument("-v", "--video", type=bool, required=True, default=False,
+ap.add_argument("-v", "--video", action='store_true',
 	help="detect video type as the input")
-ap.add_argument("-i", "--image", type=bool, required=True, default=False,
+ap.add_argument("-i", "--image", action='store_true',
 	help="detect image type as the input")
 ap.add_argument("-c", "--confidence", type=float, default=0.5,
 	help="minimum threshold for prediction probability to filter weak detections")
@@ -49,7 +52,7 @@ class SpoofRecog:
 			cv2.imshow("Frame", frame)
 			cv2.waitKey(1)
 
-	def video(self, vidsrc: Optional[int, str] = 0) -> None:
+	def video(self, vidsrc: Union[int, str] = 0) -> None:
 		"""
 		Face anti-spoofing detection on video input.
 		:param
@@ -140,6 +143,16 @@ class SpoofRecog:
 
 
 if __name__ == "__main__":
+	# ---------------------------  DEBUGGING SECTION  ---------------------------
+	debug_input = ["inference.py",
+				   "--classifier", "./pretrain/classifier/lcc-train02-infer.hdf5",
+				   "--detector", "./pretrain/detector",
+				   "--path", "0",
+				   "--video",  # "--image",
+				   "--confidence", "0.5"]
+	sys.argv = debug_input  # Uncomment for DEBUGGING purpose!
+
+	# -------------------------------  START HERE  -------------------------------
 	args = vars(ap.parse_args())  # Initialize the input argument(s)
 
 	# Load the Face detection model
@@ -150,7 +163,7 @@ if __name__ == "__main__":
 
 	# Load the face spoofing classifier
 	print("[INFO] loading liveness detector...")
-	classifier = load_model(args["model"])
+	classifier = generate_model(args["classifier"], shape=(32, 32))  #load_model(args["classifier"])
 
 	# Threshold for face detection
 	confidence_threshold = args["confidence"]
@@ -160,8 +173,18 @@ if __name__ == "__main__":
 	model = SpoofRecog(detector, classifier, confidence_threshold)  # Instantiate the model
 
 	if args["video"]:  # Detect on video input
-		model.video(vidsrc=pathsrc)
+		try:
+			video_source = int(pathsrc)
+		except:
+			video_source = pathsrc
+		print(f"Processing VIDEO input from '{pathsrc}'...")
+		model.video(vidsrc=video_source)
+
 	elif args["image"]:  # Detect on image input(s)
+		print(f"Processing IMAGE input from '{pathsrc}'...")
 		model.image(imgsrc=pathsrc)
+
 	else:
-		raise ValueError(f"Define the input type (image or video)!")
+		raise ValueError(f"Define the input type! Choose between --image or --video")
+
+	print("Finished!")
