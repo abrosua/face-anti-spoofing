@@ -40,17 +40,16 @@ class SpoofRecog:
 		self.confidence = confidence
 		self.label = ["Real", "Spoof"]
 
-	def image(self, imgsrc: List[str]) -> None:
+	def image(self, imgsrc: str) -> None:
 		"""
 		Face anti-spoofing detection on image(s) input.
 		:param
 			vidsrc: Video source (use camera ID or the video filepath).
 		"""
-		for img in imgsrc:
-			frame = cv2.imread(img)
-			frame = self._process_frame(frame)
-			cv2.imshow("Frame", frame)
-			cv2.waitKey(1)
+		frame = cv2.imread(imgsrc)
+		frame = self._process_frame(frame)
+		cv2.imshow("Frame", frame)
+		cv2.waitKey(1)
 
 	def video(self, vidsrc: Union[int, str] = 0) -> None:
 		"""
@@ -123,18 +122,19 @@ class SpoofRecog:
 				# extract the face ROI and then preproces it in the exact
 				# same manner as our training data
 				face = frame[startY:endY, startX:endX]
-				face = cv2.resize(face, (32, 32))
+				face = cv2.resize(face, (96, 96))
 				face = face.astype("float") / 255.0
 				face = img_to_array(face)
 				face = np.expand_dims(face, axis=0)
 				# pass the face ROI through the trained liveness detector
 				# model to determine if the face is "real" or "fake"
-				preds = self.classifier.predict(face)[0]
-				j = np.argmax(preds)
+				preds = float(self.classifier.predict(face)[0])
+				j = 0 if preds < 0.5 else 1
 				label = self.label[j]
 
 				# draw the label and bounding box on the frame
-				label = "{}: {:.4f}".format(label, preds[j])
+				label = "{}".format(label)
+				# label = "{}: {:.4f}".format(label, preds[j])
 				cv2.putText(frame, label, (startX, startY - 10),
 							cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
 				cv2.rectangle(frame, (startX, startY), (endX, endY),
@@ -145,9 +145,9 @@ class SpoofRecog:
 if __name__ == "__main__":
 	# ---------------------------  DEBUGGING SECTION  ---------------------------
 	debug_input = ["inference.py",
-				   "--classifier", "./pretrain/classifier/lcc-train02-infer.hdf5",
+				   "--classifier", "./output/lcc-train01-weight/mobilenetv2-best.hdf5",
 				   "--detector", "./pretrain/detector",
-				   "--path", "0",
+				   "--path", "0",  # "./input/demo/20777.jpg",
 				   "--video",  # "--image",
 				   "--confidence", "0.5"]
 	sys.argv = debug_input  # Uncomment for DEBUGGING purpose!
@@ -163,7 +163,8 @@ if __name__ == "__main__":
 
 	# Load the face spoofing classifier
 	print("[INFO] loading liveness detector...")
-	classifier = generate_model(args["classifier"], shape=(32, 32))  #load_model(args["classifier"])
+	# classifier = load_model(args["classifier"])
+	classifier = generate_model(args["classifier"], shape=(96, 96))
 
 	# Threshold for face detection
 	confidence_threshold = args["confidence"]
