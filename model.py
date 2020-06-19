@@ -23,11 +23,11 @@ def generate_model(param: str, shape: Tuple[int, int]):
 
     # Adding extra layer for our problem
     x = pretrain_net.output
-    # x = Conv2D(32, (3, 3), activation='relu')(x)
-    # x = Dropout(rate=0.2, name='extra_dropout1')(x)
-    x = GlobalAveragePooling2D()(x)
-    x = Dense(units=128, activation='relu', name='extra_fc1')(x)
+    x = Conv2D(32, (3, 3), activation='relu')(x)
     x = Dropout(rate=0.2, name='extra_dropout1')(x)
+    x = GlobalAveragePooling2D()(x)
+    # x = Dense(units=128, activation='relu', name='extra_fc1')(x)
+    # x = Dropout(rate=0.2, name='extra_dropout1')(x)
     x = Dense(1, activation='sigmoid', name='classifier')(x)
 
     model = Model(inputs=pretrain_net.input, outputs=x, name='mobilenetv2_spoof')

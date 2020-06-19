@@ -7,7 +7,7 @@ from typing import Union, List, Tuple
 import cv2
 import numpy as np
 import imutils
-from imutils.video import VideoStream
+from imutils.video import VideoStream, FileVideoStream
 from tensorflow.keras.preprocessing.image import img_to_array
 from tensorflow.keras.models import load_model
 
@@ -15,29 +15,37 @@ from model import generate_model
 
 
 # construct the argument parser and parse the arguments
-ap = argparse.ArgumentParser()
-ap.add_argument("-m", "--classifier", type=str, required=True,
-	help="path to the classifier model")
-ap.add_argument("-d", "--detector", type=str, required=True,
-	help="path to OpenCV's deep learning face detector")
-ap.add_argument("-p", "--path", type=str, required=True, default=0,
-	help="path to the input file(s), can be image, video or a camera ID.")
-ap.add_argument("-v", "--video", action='store_true',
-	help="detect video type as the input")
-ap.add_argument("-i", "--image", action='store_true',
-	help="detect image type as the input")
-ap.add_argument("-c", "--confidence", type=float, default=0.5,
-	help="minimum threshold for prediction probability to filter weak detections")
+parser = argparse.ArgumentParser()
+parser.add_argument("-m", "--classifier", type=str, required=True,
+					help="path to the classifier model")
+parser.add_argument("-d", "--detector", type=str, required=True,
+					help="path to OpenCV's deep learning face detector")
+parser.add_argument("-p", "--path", type=str, required=True, default=0,
+					help="path to the input file(s), can be image, video or a camera ID.")
+parser.add_argument("-v", "--video", action='store_true',
+					help="detect video type as the input")
+parser.add_argument("-i", "--image", action='store_true',
+					help="detect image type as the input")
+parser.add_argument("-c", "--confidence", type=float, default=0.5,
+					help="minimum threshold for prediction probability to filter weak detections")
+parser.add_argument("-t", "--threshold", type=float, default=0.5,
+					help="minimum threshold for image classification as Spoof")
+parser.add_argument("-r", "--resize", type=int, nargs='+', default=[224, 224],
+					help="Spatial dimension to resize the face size for the classifier input.")
 
 
 class SpoofRecog:
-	def __init__(self, detector, classifier, confidence):
+	def __init__(self, detector, classifier, confidence: float = 0.5, threshold: float = 0.5,
+				 resize: Tuple[int, int] = (96, 96)) -> None:
 		"""
 		Init
 		"""
 		self.detector = detector
 		self.classifier = classifier
 		self.confidence = confidence
+		self.threshold = threshold
+		self.resize = resize
+
 		self.label = ["Real", "Spoof"]
 
 	def image(self, imgsrc: str) -> None:
@@ -49,7 +57,8 @@ class SpoofRecog:
 		frame = cv2.imread(imgsrc)
 		frame = self._process_frame(frame)
 		cv2.imshow("Frame", frame)
-		cv2.waitKey(1)
+		cv2.waitKey(0)
+		cv2.destroyAllWindows()
 
 	def video(self, vidsrc: Union[int, str] = 0) -> None:
 		"""
@@ -59,11 +68,18 @@ class SpoofRecog:
 		"""
 		# initialize the video stream and allow the camera sensor to warmup
 		print("[INFO] starting video stream...")
-		vs = VideoStream(src=vidsrc).start()
+		if type(vidsrc) == int:
+			vs = VideoStream(src=vidsrc).start()
+			ctrl = True
+		elif type(vidsrc) == str:
+			vs = FileVideoStream(path=vidsrc).start()
+			ctrl = vs.more()
+		else:
+			raise ValueError(f"Unknown video source occurred at '{vidsrc}'!")
 		time.sleep(2.0)
 
 		# loop over the frames from the video stream
-		while True:
+		while ctrl:
 			# grab the frame from the threaded video stream and resize it
 			# to have a maximum width of 600 pixels
 			frame = vs.read()
@@ -122,18 +138,18 @@ class SpoofRecog:
 				# extract the face ROI and then preproces it in the exact
 				# same manner as our training data
 				face = frame[startY:endY, startX:endX]
-				face = cv2.resize(face, (96, 96))
+				face = cv2.resize(face, self.resize)
 				face = face.astype("float") / 255.0
 				face = img_to_array(face)
 				face = np.expand_dims(face, axis=0)
 				# pass the face ROI through the trained liveness detector
 				# model to determine if the face is "real" or "fake"
 				preds = float(self.classifier.predict(face)[0])
-				j = 0 if preds < 0.5 else 1
+				j = 0 if preds < self.threshold else 1
 				label = self.label[j]
 
 				# draw the label and bounding box on the frame
-				label = "{}".format(label)
+				label = "{}: {:.2f}".format(label, preds)
 				# label = "{}: {:.4f}".format(label, preds[j])
 				cv2.putText(frame, label, (startX, startY - 10),
 							cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
@@ -145,15 +161,16 @@ class SpoofRecog:
 if __name__ == "__main__":
 	# ---------------------------  DEBUGGING SECTION  ---------------------------
 	debug_input = ["inference.py",
-				   "--classifier", "./output/lcc-train01-weight/mobilenetv2-best.hdf5",
+				   "--classifier", "./output/lcc-train01b-weight/mobilenetv2-best.hdf5",
 				   "--detector", "./pretrain/detector",
-				   "--path", "0",  # "./input/demo/20777.jpg",
-				   "--video",  # "--image",
-				   "--confidence", "0.5"]
+				   "--path", "./input/demo/demo.jpg",  # Choose between <ID> or "./x/x/demo.mp4" or "./x/x/demo.jpg"
+				   "--image",  # choose between "--video" or "--image"
+				   "--confidence", "0.5",
+				   "--resize", "224", "224"]
 	sys.argv = debug_input  # Uncomment for DEBUGGING purpose!
 
 	# -------------------------------  START HERE  -------------------------------
-	args = vars(ap.parse_args())  # Initialize the input argument(s)
+	args = vars(parser.parse_args())  # Initialize the input argument(s)
 
 	# Load the Face detection model
 	print("[INFO] loading face detector...")
@@ -164,14 +181,16 @@ if __name__ == "__main__":
 	# Load the face spoofing classifier
 	print("[INFO] loading liveness detector...")
 	# classifier = load_model(args["classifier"])
-	classifier = generate_model(args["classifier"], shape=(96, 96))
+	spoof_resize = tuple(args["resize"])
+	classifier = generate_model(args["classifier"], shape=spoof_resize)
 
-	# Threshold for face detection
+	# Threshold for face detection and classifier
 	confidence_threshold = args["confidence"]
+	classifier_threshold = args["threshold"]
 
-	# Main process
+	# Main process (Instantiate the model)
 	pathsrc = args["path"]
-	model = SpoofRecog(detector, classifier, confidence_threshold)  # Instantiate the model
+	model = SpoofRecog(detector, classifier, confidence_threshold, classifier_threshold, resize=spoof_resize)
 
 	if args["video"]:  # Detect on video input
 		try:
