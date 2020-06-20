@@ -1,10 +1,8 @@
 from typing import Optional, Tuple
 
-import tensorflow as tf
-from tensorflow.keras.models import Sequential, Model
+from tensorflow.keras.models import Model
 from tensorflow.keras.applications import mobilenet_v2
-from tensorflow.keras.preprocessing.image import ImageDataGenerator
-from tensorflow.keras.layers import Conv2D, MaxPooling2D, Dense, Dropout, Input, Flatten, SeparableConv2D
+from tensorflow.keras.layers import Conv2D, Dense, Dropout
 from tensorflow.keras.layers import GlobalAveragePooling2D, BatchNormalization, Concatenate
 
 
@@ -19,7 +17,7 @@ def generate_model(param: str, shape: Tuple[int, int]):
     img_height, img_width = shape
     pretrain_net = mobilenet_v2.MobileNetV2(input_shape = (img_width, img_height, 3),
                                             include_top = False,
-                                            weights = 'imagenet')
+                                            weights = None)
 
     # Adding extra layer for our problem
     x = pretrain_net.output

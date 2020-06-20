@@ -163,11 +163,11 @@ if __name__ == "__main__":
 	debug_input = ["inference.py",
 				   "--classifier", "./output/lcc-train01b-weight/mobilenetv2-best.hdf5",
 				   "--detector", "./pretrain/detector",
-				   "--path", "./input/demo/demo.jpg",  # Choose between <ID> or "./x/x/demo.mp4" or "./x/x/demo.jpg"
-				   "--image",  # choose between "--video" or "--image"
+				   "--path", "0",  # "./input/demo/highres.jpg",  # Choose between <ID> or "./input/demo/<name>.mp4" or "./input/demo/<name>.jpg"
+				   "--video",  # choose between "--video" or "--image"
 				   "--confidence", "0.5",
 				   "--resize", "224", "224"]
-	sys.argv = debug_input  # Uncomment for DEBUGGING purpose!
+	# sys.argv = debug_input  # Uncomment for DEBUGGING purpose!
 
 	# -------------------------------  START HERE  -------------------------------
 	args = vars(parser.parse_args())  # Initialize the input argument(s)
