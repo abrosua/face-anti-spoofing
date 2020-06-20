@@ -40,7 +40,40 @@ pip install -r requirements.txt
  - `pretrain` --- pretrain and trained model storage for inference
  - `train` --- training notebooks directory
 
+## Run
 
+This program uses a Command Line Interface (CLI) to run. There are 2 types of input option for the inference, detect as image or video. Write the following commands for either types.
+
+### Image input
+
+Importing image from disk.
+
+```
+python3 inference.py \
+	--classifier ./pretrain/classifier/classifier.hdf5" \
+	--detector ./pretrain/detector \
+	--path ./input/demo/highres.jpg \
+	--image --resize 224 224
+```
+
+### Video input
+
+Importing video from disk.
+```
+python3 inference.py \
+	--classifier ./pretrain/classifier/classifier.hdf5" \
+	--detector ./pretrain/detector \
+	--path ./input/demo/highres.mp4 \
+	--video --resize 224 224
+```
+For video input, WebCam streaming is also available by defining the camera ID as the input path instead.
+```
+python3 inference.py \
+	--classifier ./pretrain/classifier/classifier.hdf5" \
+	--detector ./pretrain/detector \
+	--path 0 \
+	--video --resize 224 224
+```
 
 ## Built With
 ### Model
