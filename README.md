@@ -1,20 +1,32 @@
 ﻿# Face Anti-Spoofing Detection using SSD and MobileNetV2
 
-In this case, we're tasked to solve one problem from any public datasets. Hence, we chose an image classification problem for chest x-ray images (normal or pneumonia). The dataset is provided by [Paul Mooney](https://github.com/paultimothymooney) on [Kaggle](https://www.kaggle.com/paultimothymooney/chest-xray-pneumonia).
+Face detection/recognition has been the most popular deep learning projects/researches for these past years. One of its daily application is the face verification feature to [perform tasks](https://support.google.com/pixelphone/answer/9517039?hl=en) on our devices (e.g., unlocking the device, signing in to some apps, confirming our payment, etc). However, this method could be prone to spoof attacks, in which the model could be fooled with the facial photograph of its respective user (i.e., using a printed or digital picture of the user, and many others face-spoofing attacks). Therefore, a facial anti-spoofing detection would be worth to develop for tackling this malicious problem.
 
-This is one of the machine learning project assignment of the [bangkit](https://events.withgoogle.com/bangkit/) program by Google, an exclusive machine learning academy led by Google, in collaboration with several Indonesian unicorn startups.
+This is the final machine learning project assignment of the [Bangk!t](https://events.withgoogle.com/bangkit/) program by Google, an exclusive machine learning academy led by Google, in collaboration with several Indonesian unicorn startups.
+
+### Methodology
+Due to the limited training resources (e.g., low computability and limited datasets), we **divided the model** into 2 models (**detector** and **classifier**) with sequential pipeline, as the following:
+
+ - Single Shot Multibox Detector (**SSD**), with the pretrain face detection model, as the **detector**.
+ - MobileNetV2, with **transfer learning**, as the **classifier**.
+
+> Note: To simplify the problem, we used the built-in models that are available on OpenCV and TensorFlow Keras respectively.
+
+In this case, we only trained the classifier model and used the detector directly on the inference stage. Moreover, a complete pipeline of facial anti-spoofing detector is recommended fore the future improvements, although it requires a new dataset that also provides non-close-up images (i.e., full or half body) with the corresponding bounding box or facial key points label.
+
+To limit our scope of work, we decided to tune the optimizer hyperparameter only (e.g., learning rate, scheduler, etc) and the `class_weight` as it's the one that arguably impacts the performance the most.
+
+> The dataset is highly imbalanced towards the spoof image, hence making class weight as an important training feature to avoid overfitting.
 
 
 ## Getting Started
+### Prerequisites
 
-### Methodology
-Convolutional Neural Networks (CNN), is currently the best solution for handling Computer Vision problem. However, harnessing its full potential might be very resourceful. Therefore we decided to use [transfer learning](https://en.wikipedia.org/wiki/Transfer_learning) on popular CNN architecture. The model is sorted from ImageNet's image classification [leaderboard](https://paperswithcode.com/sota/image-classification-on-imagenet), since ImageNet is consisted of thousands of classes, thus might provides model with better generalization.
+Install the dependencies from the `requirements.txt`
+```
+pip install -r requirements.txt
+```
 
-> Note: To simplify the problem, we used the [built-in models](https://www.tensorflow.org/api_docs/python/tf/keras/applications) that are available on TensorFlow Keras, and sorted by the ImageNet leaderboard.
-
-Xception and VGG-16 network are chosen due to its performance and number of parameters. Since we're working on limited resources, "lighter" models are preferable.
-
-To limit our scope of work, we decided to tune the optimizer hyperparameter only (e.g., learning rate, scheduler, etc) as it's the one that arguably impacts the performance the most.
 
 ### File Structure
 
@@ -28,13 +40,6 @@ To limit our scope of work, we decided to tune the optimizer hyperparameter only
  - `pretrain` --- pretrain and trained model storage for inference
  - `train` --- training notebooks directory
 
-### Prerequisites
-
-Install the dependencies from the `requirements.txt`
-
-```
-pip install -r requirements.txt
-```
 
 
 ## Built With
