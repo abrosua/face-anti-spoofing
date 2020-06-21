@@ -7,7 +7,7 @@ from typing import Union, Optional, Tuple
 import cv2
 import numpy as np
 import imutils
-from imutils.video import VideoStream, FileVideoStream
+from imutils.video import VideoStream, FileVideoStream, FPS
 from tensorflow.keras.preprocessing.image import img_to_array
 
 from model import generate_model
@@ -50,11 +50,12 @@ class SpoofRecog:
 		self.threshold = threshold
 		self.resize = resize
 
-		savedir = os.path.dirname(savepath)
-		savedir = "./output/run" if not savedir else savedir
-		savepath = os.path.join(savedir, os.path.basename(savepath))
-		if not os.path.isdir(savedir):
-			os.makedirs(savedir)
+		if savepath is not None:
+			savedir = os.path.dirname(savepath)
+			savedir = "./output/run" if not savedir else savedir
+			savepath = os.path.join(savedir, os.path.basename(savepath))
+			if not os.path.isdir(savedir):
+				os.makedirs(savedir)
 
 		self.show = show
 		self.save = savepath
@@ -83,27 +84,33 @@ class SpoofRecog:
 		:param
 			vidsrc: Video source (use camera ID or the video filepath).
 		"""
+		assert type(vidsrc) == str or type(vidsrc) == int
+
 		# initialize the video stream and allow the camera sensor to warmup
 		print("[INFO] starting video stream...")
-		if type(vidsrc) == int:
-			vs = VideoStream(src=vidsrc).start()
-			ctrl = True
-		elif type(vidsrc) == str:
-			vs = FileVideoStream(path=vidsrc).start()
-			ctrl = vs.more()
-		else:
-			raise ValueError(f"Unknown video source occurred at '{vidsrc}'!")
+		vs = cv2.VideoCapture(vidsrc)
+		fps = vs.get(cv2.CAP_PROP_FPS)
 		time.sleep(2.0)
 
+		fourcc = cv2.VideoWriter_fourcc(*"MJPG") if self.save else None
+		writer, h, w = None, None, None
+
 		# loop over the frames from the video stream
-		while ctrl:
-			# grab the frame from the threaded video stream and resize it
-			# to have a maximum width of 600 pixels
-			frame = vs.read()
-			frame = self._process_frame(frame)
+		while vs.isOpened():
+			# Read the frame if there's still available image
+			ret, frame = vs.read()
+			if not ret:  # Break the iteration if no more available frame
+				break
+			frame = self._process_frame(frame)  # image pre-processing
 
 			if self.show:  # Option to show the plot
 				cv2.imshow("Frame", frame)
+
+			if self.save:  # Option to write the plot on disk
+				if writer is None:  # Initialize the video writer
+					(h, w) = frame.shape[:2]
+					writer = cv2.VideoWriter(self.save, fourcc, fps, (w, h), True)
+				writer.write(frame)
 
 			# Type "q" to break the loop (ending the stream)
 			key = cv2.waitKey(1) & 0xFF
@@ -112,7 +119,8 @@ class SpoofRecog:
 
 		# Cleaning up the excess
 		cv2.destroyAllWindows()
-		vs.stop()
+		vs.release()
+		writer.release() if writer is not None else None
 
 	def _process_frame(self, frame: np.array) -> np.array:
 		"""
@@ -181,11 +189,14 @@ if __name__ == "__main__":
 	debug_input = ["inference.py",
 				   "--classifier", "./output/lcc-train01b-weight/mobilenetv2-best.hdf5",
 				   "--detector", "./pretrain/detector",
-				   "--path", "0",  # "./input/demo/highres.jpg",  # Choose between <ID> or "./input/demo/<name>.mp4" or "./input/demo/<name>.jpg"
+				   "--path", "./input/demo/lowres.mp4",  # "./input/demo/highres.jpg",  # Choose between <ID> or "./input/demo/<name>.mp4" or "./input/demo/<name>.jpg"
 				   "--video",  # choose between "--video" or "--image"
 				   "--confidence", "0.5",
-				   "--resize", "224", "224"]
-	# sys.argv = debug_input  # Uncomment for DEBUGGING purpose!
+				   "--resize", "224", "224",
+				   "--save", "test.avi",  # use "test.avi" or "test.png"
+				   # "--show",
+				   ]
+	sys.argv = debug_input  # Uncomment for DEBUGGING purpose!
 
 	# -------------------------------  START HERE  -------------------------------
 	args = vars(parser.parse_args())  # Initialize the input argument(s)
@@ -208,7 +219,8 @@ if __name__ == "__main__":
 
 	# Main process (Instantiate the model)
 	pathsrc = args["path"]
-	model = SpoofRecog(detector, classifier, confidence_threshold, classifier_threshold, resize=spoof_resize)
+	model = SpoofRecog(detector, classifier, confidence_threshold, classifier_threshold, resize=spoof_resize,
+					   show=args["show"], savepath=args["save"])
 
 	if args["video"]:  # Detect on video input
 		try:
