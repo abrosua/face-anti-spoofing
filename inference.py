@@ -2,7 +2,7 @@ import os
 import sys
 import time
 import argparse
-from typing import Union, List, Tuple
+from typing import Union, Optional, Tuple
 
 import cv2
 import numpy as np
@@ -31,11 +31,16 @@ parser.add_argument("-t", "--threshold", type=float, default=0.5,
 					help="minimum threshold for image classification as Spoof")
 parser.add_argument("-r", "--resize", type=int, nargs='+', default=[224, 224],
 					help="Spatial dimension to resize the face size for the classifier input.")
+parser.add_argument("-s", "--save", type=str, default=None,
+					help="path to save the detection result.")
+parser.add_argument("-sh", "--show", action='store_true',
+					help="option to show the result plot.")
 
 
 class SpoofRecog:
 	def __init__(self, detector, classifier, confidence: float = 0.5, threshold: float = 0.5,
-				 resize: Tuple[int, int] = (96, 96)) -> None:
+				 resize: Tuple[int, int] = (96, 96), show: bool = False, savepath: Optional[str] = None
+				 ) -> None:
 		"""
 		Init
 		"""
@@ -45,6 +50,14 @@ class SpoofRecog:
 		self.threshold = threshold
 		self.resize = resize
 
+		savedir = os.path.dirname(savepath)
+		savedir = "./output/run" if not savedir else savedir
+		savepath = os.path.join(savedir, os.path.basename(savepath))
+		if not os.path.isdir(savedir):
+			os.makedirs(savedir)
+
+		self.show = show
+		self.save = savepath
 		self.label = ["Real", "Spoof"]
 
 	def image(self, imgsrc: str) -> None:
@@ -55,9 +68,14 @@ class SpoofRecog:
 		"""
 		frame = cv2.imread(imgsrc)
 		frame = self._process_frame(frame)
-		cv2.imshow("Frame", frame)
-		cv2.waitKey(0)
-		cv2.destroyAllWindows()
+
+		if self.show:  # Option to show the plot
+			cv2.imshow("Frame", frame)
+			cv2.waitKey(0)
+			cv2.destroyAllWindows()
+
+		if self.save:  # Option to save to local
+			cv2.imwrite(self.save, frame)
 
 	def video(self, vidsrc: Union[int, str] = 0) -> None:
 		"""
@@ -84,14 +102,15 @@ class SpoofRecog:
 			frame = vs.read()
 			frame = self._process_frame(frame)
 
-			# show the output frame and wait for a key press
-			cv2.imshow("Frame", frame)
+			if self.show:  # Option to show the plot
+				cv2.imshow("Frame", frame)
+
+			# Type "q" to break the loop (ending the stream)
 			key = cv2.waitKey(1) & 0xFF
-			# if the `q` key was pressed, break from the loop
 			if key == ord("q"):
 				break
 
-		# do a bit of cleanup
+		# Cleaning up the excess
 		cv2.destroyAllWindows()
 		vs.stop()
 
