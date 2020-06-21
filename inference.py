@@ -196,7 +196,7 @@ if __name__ == "__main__":
 				   "--save", "test.avi",  # use "test.avi" or "test.png"
 				   # "--show",
 				   ]
-	sys.argv = debug_input  # Uncomment for DEBUGGING purpose!
+	# sys.argv = debug_input  # Uncomment for DEBUGGING purpose!
 
 	# -------------------------------  START HERE  -------------------------------
 	args = vars(parser.parse_args())  # Initialize the input argument(s)
