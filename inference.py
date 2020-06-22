@@ -187,13 +187,13 @@ class SpoofRecog:
 if __name__ == "__main__":
 	# ---------------------------  DEBUGGING SECTION  ---------------------------
 	debug_input = ["inference.py",
-				   "--classifier", "./output/lcc-train01b-weight/mobilenetv2-best.hdf5",
+				   "--classifier", "./output/lcc-train04b-weight/mobilenetv2-epoch_12.hdf5",
 				   "--detector", "./pretrain/detector",
 				   "--path", "./input/demo/lowres.mp4",  # "./input/demo/highres.jpg",  # Choose between <ID> or "./input/demo/<name>.mp4" or "./input/demo/<name>.jpg"
 				   "--video",  # choose between "--video" or "--image"
 				   "--confidence", "0.5",
 				   "--resize", "224", "224",
-				   "--save", "test.avi",  # use "test.avi" or "test.png"
+				   "--save", "./demo/lowres_pred.avi",  # use "test.avi" or "test.png"
 				   # "--show",
 				   ]
 	# sys.argv = debug_input  # Uncomment for DEBUGGING purpose!
