@@ -50,7 +50,7 @@ Importing image from disk.
 
 ```
 python3 inference.py \
-    --classifier ./pretrain/classifier/classifier.hdf5" \
+    --classifier ./pretrain/classifier/classifier.hdf5 \
     --detector ./pretrain/detector \
     --path ./input/demo/highres.jpg \
     --image --resize 224 224 \
@@ -62,7 +62,7 @@ python3 inference.py \
 Importing video from disk.
 ```
 python3 inference.py \
-    --classifier ./pretrain/classifier/classifier.hdf5" \
+    --classifier ./pretrain/classifier/classifier.hdf5 \
     --detector ./pretrain/detector \
     --path ./input/demo/lowres.mp4 \
     --video --resize 224 224 \
@@ -71,7 +71,7 @@ python3 inference.py \
 For video input, WebCam streaming is also available by defining the camera ID as the input path instead.
 ```
 python3 inference.py \
-    --classifier ./pretrain/classifier/classifier.hdf5" \
+    --classifier ./pretrain/classifier/classifier.hdf5 \
     --detector ./pretrain/detector \
     --path 0 \
     --video --resize 224 224 \
