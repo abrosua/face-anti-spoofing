@@ -1,5 +1,8 @@
+import os
 from typing import Optional, Tuple
 
+import tensorflow as tf
+import tensorflowjs as tfjs
 from tensorflow.keras.models import Model
 from tensorflow.keras.applications import mobilenet_v2
 from tensorflow.keras.layers import Conv2D, Dense, Dropout
@@ -36,5 +39,40 @@ def generate_model(param: str, shape: Tuple[int, int]):
     return model
 
 
+class SaveModel:
+    def __init__(self, model, savedir: str):
+        if not os.path.isdir(savedir):
+            os.makedirs(savedir)
+        self.model = model
+        self.savedir = savedir
+
+    def to_savedmodel(self, savename: str, version: int = 1):
+        savepath = os.path.join(self.savedir, savename, str(version))
+
+        # Saving model as SavedModel format
+        tf.saved_model.save(self.model, savepath)
+
+        # Printing the output nodes name (useful for converting into TensorFlowJS format
+        output_nodes_name = self.model.output_names[0]
+        print(f"Output node names: {output_nodes_name}")
+
+    def to_tfjs(self, savename: str):
+        savepath = os.path.join(self.savedir, savename)
+
+        # Saving model as tfjs format
+        tfjs.converters.save_keras_model(self.model, savepath)
+
+
 if __name__ == "__main__":
-    pass
+    params = "./pretrain/classifier/classifier.hdf5"
+    savedir = os.path.dirname(params)
+    input_shape = (224, 224)
+
+    model = generate_model(params, shape=input_shape)
+    saving = SaveModel(model, savedir=savedir)  # Instantiate the saving object
+
+    # Saving to other format
+    savename = "mobilenet-spoof"
+    saving.to_tfjs(savename)  # save model to TFJS format
+
+    print(f"Finished saving on {savedir}!")
