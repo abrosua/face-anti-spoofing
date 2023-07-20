@@ -90,13 +90,6 @@ python3 inference.py \
 * [imutils](https://github.com/jrosebr1/imutils/)
 * [Google Colab](https://colab.research.google.com/)
 
-
-## Authors
-
-* **Faber Silitonga** --- [abrosua](https://github.com/abrosua)
-* **Mutia Wahyuni** --- [github](https://github.com/)
-* **Kevin Angelo** --- [github](https://github.com/)
-
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details
