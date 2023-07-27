@@ -8,7 +8,7 @@ This is the final machine learning project assignment of the [Bangk!t](https://e
 Due to the limited training resources (e.g., low computability and limited datasets), we **divided the model** into 2 models (**detector** and **classifier**) with sequential pipeline, as the following:
 
  - Single Shot Multibox Detector (**SSD**), with the pretrain face detection model, as the **detector**.
- - MobileNetV2, with **transfer learning**, as the **classifier**.
+ - MobileNetV2, with **transfer learning**, as the **classifier**, trained using [Kaggle notebook](https://www.kaggle.com/code/faber24/face-anti-spoofing-detection-using-mobilenetv2).
 
 > Note: To simplify the problem, we used the built-in models that are available on OpenCV and TensorFlow Keras respectively.
 
